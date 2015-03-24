@@ -79,7 +79,7 @@ fluentStage.prototype.build = function() {
 	if(this._name){
 		return new pipeline[this._name](this.cfg);
 	}
-	return this;
+	return this.cfg;
 };
 
 fluentStage.prototype.stage = function(fn) {

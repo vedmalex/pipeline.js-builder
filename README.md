@@ -24,7 +24,8 @@ it is a fluent interface for building Stages
 						.stage()
 						.split()
 						.combine()
-						.evaluate(true)//!!no build!!!
+						.evaluate(true)
+						.build()
 				)
 				.case(builder.Stage()
 						.stage()
@@ -32,7 +33,7 @@ it is a fluent interface for building Stages
 						.combine()
 						.evaluate(function(ctx){
 							return ctx.ready;
-						})//!!no build!!!
+						}).build()
 				)
 				.build();
 
