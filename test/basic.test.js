@@ -40,6 +40,18 @@ describe('it works', function() {
 		done();
 	});
 
+	it('create MWSCase not throws when in builds', function(done) {
+		var stage = builder.MWSCase().stage(function(ctx) {
+				return;
+			})
+			.validate()
+			.schema()
+			.build();
+		stage.validate();
+		assert(stage);
+		done();
+	});
+
 	it('create stage toFunction not throws', function(done) {
 		var stage = builder.Stage().stage(function(ctx) {
 				return;

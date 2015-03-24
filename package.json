@@ -1,6 +1,6 @@
 {
   "name": "pipeline.js-builder",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "fluent interface builder for pipeline.js",
   "main": "index.js",
   "scripts": {

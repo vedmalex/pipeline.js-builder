@@ -67,107 +67,115 @@ Stage.prototype.toPromise = function() {
 };
 
 function fluentStage(sType) {
+	this.cfg = {};
 	this._name = sType;
 }
 
+exports.MWSCase = function(){
+	return new fluentStage();
+};
+
 fluentStage.prototype.build = function() {
-	return new pipeline[this._name](this);
+	if(this._name){
+		return new pipeline[this._name](this.cfg);
+	}
+	return this;
 };
 
 fluentStage.prototype.stage = function(fn) {
-	this.run = fn;
+	this.cfg.run = fn;
 	return this;
 };
 
 fluentStage.prototype.rescue = function(fn) {
-	this.rescue = fn;
+	this.cfg.rescue = fn;
 	return this;
 };
 
 fluentStage.prototype.name = function(name) {
-	this.name = name;
+	this.cfg.name = name;
 	return this;
 };
 
 fluentStage.prototype.validate = function(fn) {
-	this.validate = fn;
+	this.cfg.validate = fn;
 	return this;
 };
 
 fluentStage.prototype.schema = function(obj) {
-	this.schema = obj;
+	this.cfg.schema = obj;
 	return this;
 };
 
 fluentStage.prototype.ensure = function(fn) {
-	this.ensure = fn;
+	this.cfg.ensure = fn;
 	return this;
 };
 
 fluentStage.prototype.success = function(fn) {
-	this.success = fn;
+	this.cfg.success = fn;
 	return this;
 };
 
 fluentStage.prototype.failed = function(fn) {
-	this.failed = fn;
+	this.cfg.failed = fn;
 	return this;
 };
 
 fluentStage.prototype.condition = function(fn) {
-	this.condition = fn;
+	this.cfg.condition = fn;
 	return this;
 };
 
 fluentStage.prototype.split = function(fn) {
-	this.split = fn;
+	this.cfg.split = fn;
 	return this;
 };
 
 fluentStage.prototype.combine = function(fn) {
-	this.combine = fn;
+	this.cfg.combine = fn;
 	return this;
 };
 
 fluentStage.prototype.reachEnd = function(fn) {
-	this.reachEnd = fn;
+	this.cfg.reachEnd = fn;
 	return this;
 };
 
 fluentStage.prototype.case = function(obj) {
 	if (!this.cases) this.cases = [];
-	this.cases.push(obj);
+	this.cfg.cases.push(obj);
 	return this;
 };
 
 fluentStage.prototype.evaluate = function(obj) {
-	this.evaluate = fn;
+	this.cfg.evaluate = fn;
 	return this;
 };
 
 fluentStage.prototype.stages = function(obj) {
 	if (!this.cases) this.stages = [];
-	this.cases.push(obj);
+	this.cfg.cases.push(obj);
 	return this;
 };
 
 fluentStage.prototype.timeout = function(ms) {
-	this.timoeut = ms;
+	this.cfg.timoeut = ms;
 	return this;
 };
 
 fluentStage.prototype.overdue = function(fn) {
-	this.overdue = fn;
+	this.cfg.overdue = fn;
 	return this;
 };
 
 fluentStage.prototype.prepare = function(fn) {
-	this.prepare = fn;
+	this.cfg.prepare = fn;
 	return this;
 };
 
 fluentStage.prototype.finalize = function(fn) {
-	this.finalize = fn;
+	this.cfg.finalize = fn;
 	return this;
 };
 
