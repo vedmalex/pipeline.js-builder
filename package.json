@@ -1,0 +1,25 @@
+{
+  "name": "pipeline.js-builder",
+  "version": "0.0.1",
+  "description": "fluent interface builder for pipeline.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "make test"
+  },
+  "keywords": [
+    "pipeline.js"
+  ],
+  "dependencies": {
+    "pipeline.js": "*",
+    "q":"*"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "benchmark": "*",
+    "browserify": "*",
+    "dox": "*",
+    "doxx": "*"
+  },
+  "author": "vedmalex",
+  "license": "MIT"
+}
