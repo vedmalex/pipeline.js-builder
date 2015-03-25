@@ -1,4 +1,4 @@
-var q = require('q');
+var promise = require('mpromise');
 
 var pipeline = require('pipeline.js');
 var Stage = require('pipeline.js').Stage;
@@ -51,6 +51,7 @@ function init() {
 	}
 }
 
+
 Stage.prototype.toFunction = function() {
 	var self = this;
 	return function(ctx, callback) {
@@ -59,11 +60,18 @@ Stage.prototype.toFunction = function() {
 };
 
 // продумать, скорее контекст чем stage должен биндиться...
-Stage.prototype.toPromise = function() {
+Stage.prototype.toPromise = function(ctx, callback) {
+	// so far promis has memory and it is not reenterable, we need to fix context.
 	var self = this;
-	return function(ctx, callback) {
-		self.execute(ctx, callback);
-	};
+	var resPromise = new promise(callback);
+	self.execute(ctx, function(err, ctx) {
+		if (err) {
+			resPromise.reject(err);
+		} else {
+			resPromise.fulfill(ctx);
+		}
+	});
+	return resPromise;
 };
 
 function fluentStage(sType) {
@@ -71,12 +79,12 @@ function fluentStage(sType) {
 	this._name = sType;
 }
 
-exports.MWSCase = function(){
+exports.MWSCase = function() {
 	return new fluentStage();
 };
 
 fluentStage.prototype.build = function() {
-	if(this._name){
+	if (this._name) {
 		return new pipeline[this._name](this.cfg);
 	}
 	return this.cfg;

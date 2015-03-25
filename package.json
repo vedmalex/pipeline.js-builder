@@ -11,7 +11,8 @@
   ],
   "dependencies": {
     "pipeline.js": "*",
-    "q":"*"
+    "mpromise":"*",
+    "validate.js":"*"
   },
   "devDependencies": {
     "mocha": "*",
