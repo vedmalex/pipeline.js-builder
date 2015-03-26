@@ -1,6 +1,5 @@
 var util = require('util');
 var assert = require('assert');
-var builder = require('../index.js');
 
 var Stage = require('pipeline.js').Stage;
 var Context = require('pipeline.js').Context;
@@ -14,147 +13,445 @@ var RetryOnError = require('pipeline.js').RetryOnError;
 var MultiWaySwitch = require('pipeline.js').MultiWaySwitch;
 var DoWhile = require('pipeline.js').DoWhile;
 var Empty = require('pipeline.js').Empty;
+var sb = require('../lib/index.js');
 
-describe('it works', function() {
-	it('create stage', function(done) {
-		var stage = builder.Stage().stage(function(ctx) {
-				return;
+describe('Stage', function() {
+	it('Stage inits Base', function(done) {
+
+		var st = sb.Stage(function(err, ctx, done) {
+				done();
 			})
-			.validate()
-			.schema()
-			.build();
-		assert(stage instanceof Stage);
-		done();
-	});
+			.ensure(function(ctx) {
+				return true;
+			})
+			.name('typeicalStage')
+			.validate(function(ctx) {
+				return true;
+			})
+			.schema({
+				name: Number
+			})
+			.rescue(function() {
+				return;
+			});
 
-	it('create stage throws', function(done) {
+		assert(st.cfg.name === 'typeicalStage');
+		assert(st.cfg.schema);
+		assert(st.cfg.ensure);
+		assert(st.cfg.rescue);
+		assert(st.cfg.validate);
 		assert.throws(function() {
-			var stage = builder.Stage().stage(function(ctx) {
-					return;
-				})
-				.validate()
-				.schema()
-				.build();
-			stage.stage();
+			var stg = st.build();
 		});
+		// assert(stg instanceof Stage);
 		done();
 	});
-
-	it('create MWSCase not throws when in builds', function(done) {
-		var stage = builder.MWSCase().stage(function(ctx) {
-				return;
+	it('Stage is built', function(done) {
+		var st = sb.Stage(function(err, ctx, done) {
+				done();
 			})
-			.validate()
-			.schema()
-			.build();
-		stage.validate();
-		assert(stage);
+			.ensure(function(ctx) {
+				return true;
+			})
+			.name('typeicalStage')
+			.schema({
+				name: Number
+			});
+		var stg = st.build();
+		assert(stg instanceof Stage);
 		done();
 	});
+	it("not Throws on empty stages", function(done) {
+		assert.doesNotThrow(function() {
+			var pipe = sb.Stage()
+				.stage(function() {})
+		});
 
-	it('create stage toFunction not throws', function(done) {
-		var stage = builder.Stage().stage(function(ctx) {
-				return;
-			})
-			.validate()
-			.schema()
-			.build()
-			.toFunction();
-		assert(stage instanceof Function);
+		done();
+	});
+	it("throws on empty stages", function(done) {
+		assert.throws(function() {
+			var pipe = sb.Stage()
+				.stage(1)
+		});
+
 		done();
 	});
 });
 
-var validate = require('validate.js');
-describe('validators', function() {
-	it('validate.js', function(done) {
-		validate.validators.mutex = function(value, options, key, validatee) {
-			if (Array.isArray(options)) {
-				var result;
-				var rec;
-				for (var i = 0, len = options.length; i < len; i++) {
-					rec = validatee[options[i]];
-					result |= !!rec;
-				}
-				if (result)
-					return "is in mutual exclusion with " + options.join(',');
-			}
-		};
-
-		validate.validators.isFunction = function(value, options, key, validatee) {
-			if (options.is && validate.isFunction(value)) return "must be a function";
-			if (!options.is && !validate.isFunction(value)) return "must not be a function";
-		};
-
-		var tCase = {
-			ensure: function() {},
-			validate: function() {},
-			// schema: {sone:1}
-		};
-		var contstraint = {
-			ensure: {
-				mutex: ['schema', 'validate'],
-				isFunction: {
-					is: true
-				},
-				presence: true
-			},
-			schema: {
-				mutex: ['validate'],
-				presence: true
-			},
-			validate: {
-				mutex: ['schema'],
-				presence: true,
-				isFunction: {
-					is: true
-				}
-			}
-		};
-		var t = validate(tCase, contstraint);
-		assert(t);
-		console.log(t);
-		var t1 = validate({
-			name: 1,
-
-		}, contstraint);
-		assert(!t1);
-
+describe('Pipeline', function() {
+	it("Works inits", function(done) {
+		var pipe = sb.Pipeline(function() {})
+			.then(function() {})
+			.then(new sb.fStage(function() {}))
+			.then({
+				run: function() {},
+				schema: {}
+			})
+			.then(new Stage(function() {}));
+		assert(pipe.cfg.stages);
+		assert(pipe.cfg.stages.length === 5);
 		done();
 	});
 
-	it('js-schema', function(done) {
-		var schema = require('js-schema');
-		var checker = schema({
-			cfg: [{
-				ensure: Function,
-				schema: null,
-				validate: null
-			}, {
-				ensure: null,
-				schema: Function,
-				validate: null
-			}, {
-				ensure: null,
-				schema: null,
-				validate: Function
-			}]
+	it("Built", function(done) {
+		var pipe = sb.Pipeline(function() {})
+			.then(function() {})
+			.then(new sb.fStage(function() {}))
+			.then({
+				run: function() {},
+				schema: {}
+			})
+			.then(new Stage(function() {}));
+
+		assert(pipe.cfg.stages.length === 5);
+		var p = pipe.build();
+		assert(p instanceof Pipeline);
+		assert(p.stages.every(function(st) {
+			return st instanceof Stage;
+		}));
+		done();
+	});
+
+	it("not Throws on empty stages", function(done) {
+		assert.doesNotThrow(function() {
+			var pipe = sb.Pipeline()
+				.then(function() {})
+				.then()
+				.then({
+					run: function() {},
+					schema: {}
+				})
+				.then(new Stage(function() {}));
+			assert(pipe.cfg.stages.length === 3);
 		});
-		var obj = {
-			cfg: {
-				schema: function() {},
-				// ensure: function(),
-				validate: function() {}
-			}
-		};
-		var res = checker(obj);
-		console.log(checker.errors(obj));
-		res = checker({
-			schema: Number,
-			ensure: undefined,
-			validate: function() {}
+
+		done();
+	});
+	it("Throws on wrong stages", function(done) {
+		assert.throws(function() {
+			var pipe = sb.Pipeline(false)
+				.then(function() {})
+				.then(1)
+				.then({
+					run: function() {},
+					schema: {}
+				})
+				.then(new Stage(function() {}));
 		});
-		console.log(res);
+
+		done();
+	});
+});
+
+describe('Parallel', function(done) {
+	it("inits", function(done) {
+		var par = sb.Parallel(function() {})
+			.split(function() {})
+			.combine(function() {});
+		assert(par.cfg.combine);
+		assert(par.cfg.split);
+		assert(par.cfg.stage);
+		done();
+	});
+	it("Built", function(done) {
+		var par = sb.Parallel(function() {})
+			.split(function() {})
+			.combine();
+		var p = par.build();
+		assert(p instanceof Parallel);
+		done();
+	});
+	it("not throws on empty stage", function(done) {
+		assert.doesNotThrow(function() {
+			var par = sb.Parallel()
+				.stage(function() {})
+				.split(function() {})
+				.combine();
+			par.build();
+		});
+		done();
+	});
+	it("throws on wrong stage", function(done) {
+		assert.throws(function() {
+			var par = sb.Parallel()
+				.stage(true)
+				.split(function() {})
+				.combine();
+			par.build();
+		});
+		done();
+	});
+});
+
+describe('Sequential', function(done) {
+	it("inits", function(done) {
+		var par = sb.Sequential(function() {})
+			.split(function() {})
+			.combine(function() {});
+		assert(par.cfg.combine);
+		assert(par.cfg.split);
+		assert(par.cfg.stage);
+		done();
+	});
+	it("Built", function(done) {
+		var par = sb.Sequential(function() {})
+			.split(function() {})
+			.combine();
+		var p = par.build();
+		assert(p instanceof Sequential);
+		done();
+	});
+	it("not throws on empty stage", function(done) {
+		assert.doesNotThrow(function() {
+			var par = sb.Sequential()
+				.stage(function() {})
+				.split(function() {})
+				.combine();
+			par.build();
+		});
+		done();
+	});
+	it("throws on wrong stage", function(done) {
+		assert.throws(function() {
+			var par = sb.Sequential()
+				.stage(true)
+				.split(function() {})
+				.combine();
+			par.build();
+		});
+		done();
+	});
+});
+
+describe('RetryOnError', function(done) {
+	it("inits", function(done) {
+		var par = sb.RetryOnError(function() {})
+			.retry(function() {});
+		assert(par.cfg.stage);
+		assert(par.cfg.retry);
+		done();
+	});
+	it("Built", function(done) {
+		var par = sb.RetryOnError(function() {})
+			.retry(function() {});
+		var p = par.build();
+		assert(p instanceof RetryOnError);
+		done();
+	});
+	it("not throws on empty stage", function(done) {
+		assert.doesNotThrow(function() {
+			var par = sb.RetryOnError()
+				.stage(function() {})
+				.retry(function() {});
+			var p = par.build();
+		});
+		done();
+	});
+	it("throws on wrong stage", function(done) {
+		assert.throws(function() {
+			var par = sb.RetryOnError(function() {})
+				.stage(1)
+				.retry(function() {});
+			var p = par.build();
+		});
+		done();
+	});
+});
+
+describe('Timeout', function(done) {
+	it("inits", function(done) {
+		var par = sb.Timeout(function() {})
+			.overdue(function() {})
+			.timeout(function() {});
+		assert(par.cfg.stage);
+		assert(par.cfg.timeout);
+		assert(par.cfg.overdue);
+		done();
+	});
+	it("Built", function(done) {
+		var par = sb.Timeout(function() {})
+			.overdue(function() {})
+			.timeout(10);
+		var p = par.build();
+		assert(p instanceof Timeout);
+
+		par = sb.Timeout(function() {})
+			.overdue(function() {})
+			.timeout(function() {});
+		p = par.build();
+
+		done();
+	});
+	it("not throws on empty stage", function(done) {
+		assert.doesNotThrow(function() {
+			var par = sb.Timeout()
+				.stage(function() {})
+				.overdue(function() {})
+				.timeout(10);
+			par.build();
+		});
+		done();
+	});
+	it("throws on wrong stage", function(done) {
+		assert.throws(function() {
+			var par = sb.Timeout(function() {})
+				.stage(1)
+				.overdue(function() {})
+				.timeout(10);
+			par.build();
+		});
+		done();
+	});
+});
+
+describe('Wrap', function(done) {
+	it("inits", function(done) {
+		var par = sb.Wrap(function() {})
+			.prepare(function() {})
+			.finalize(function() {});
+		assert(par.cfg.stage);
+		assert(par.cfg.prepare);
+		assert(par.cfg.finalize);
+		done();
+	});
+	it("Built", function(done) {
+		var par = sb.Wrap(function() {})
+			.prepare(function() {})
+			.finalize(function() {});
+		var p = par.build();
+		assert(p instanceof Wrap);
+		done();
+	});
+	it("not throws on empty stage", function(done) {
+		assert.doesNotThrow(function() {
+			var par = sb.Wrap()
+				.stage(function() {})
+				.prepare(function() {})
+				.finalize(function() {});
+			par.build();
+		});
+		done();
+	});
+	it("throws on wrong stage", function(done) {
+		assert.throws(function() {
+			var par = sb.Wrap()
+				.stage(1)
+				.prepare(function() {})
+				.finalize(function() {});
+			par.build();
+		});
+		done();
+	});
+});
+
+describe('DoWhile', function(done) {
+	it("inits", function(done) {
+		var par = sb.DoWhile(function() {})
+			.split(function() {})
+			.reachEnd(function() {});
+		assert(par.cfg.stage);
+		assert(par.cfg.split);
+		assert(par.cfg.reachEnd);
+		done();
+	});
+	it("Built", function(done) {
+		var par = sb.DoWhile(function() {})
+			.split(function() {})
+			.reachEnd(function() {});
+		var p = par.build();
+		assert(p instanceof DoWhile);
+		done();
+	});
+	it("not throws on empty stage", function(done) {
+		assert.doesNotThrow(function() {
+			var par = sb.DoWhile()
+				.stage(function() {})
+				.split(function() {})
+				.reachEnd(function() {});
+			par.build();
+		});
+		done();
+	});
+	it("throws on wrong stage", function(done) {
+		assert.throws(function() {
+			var par = sb.DoWhile()
+				.stage(1)
+				.split(function() {})
+				.reachEnd(function() {});
+			par.build();
+		});
+		done();
+	});
+});
+
+describe('IfElse', function(done) {
+	it("inits", function(done) {
+		var par = sb.If(function() {})
+			.then(function() {})
+			.else(function() {});
+		assert(par.cfg.condition);
+		assert(par.cfg.success);
+		assert(par.cfg.failed);
+		done();
+	});
+	it("Built", function(done) {
+		var par = sb.If(function() {})
+			.then(function() {})
+			.else();
+		var p = par.build();
+		assert(p instanceof IfElse);
+		done();
+	});
+	it("not throws on empty stage", function(done) {
+		assert.doesNotThrow(function() {
+			var par = sb.If(function(){})
+				.then()
+				.then(function() {})
+				.else(function() {});
+			par.build();
+		});
+		done();
+	});
+	it("throws on wrong stage", function(done) {
+		assert.throws(function() {
+			var par = sb.If(1)
+				.then(function() {})
+				.else(function() {});
+			par.build();
+		});
+		done();
+	});
+});
+
+describe('MultiWaySwitch', function(done) {
+	it('intis', function(done){
+		var sw = sb.MWS()
+			.name('MWS')
+			.combine(function(){})
+			.split(function(){})
+			.case(sb.MWCase())
+			.case({stage:new Stage})
+			.case(function(){})
+			.case();
+		assert(sw.cfg.name);
+		assert(sw.cfg.combine);
+		assert(sw.cfg.split);
+		assert(sw.cfg.cases.length === 3);
+		done();
+	});
+	it('Built', function(done){
+		var sw = sb.MWS()
+			.name('MWS')
+			.combine(function(){})
+			.split(function(){})
+			.case(sb.MWCase())
+			.case({stage:new Stage})
+			.case(function(){})
+			.case();
+		var swb = sw.build();
+		assert(swb instanceof MultiWaySwitch);
+		assert(swb.cases.length === 3);
 		done();
 	});
 });
