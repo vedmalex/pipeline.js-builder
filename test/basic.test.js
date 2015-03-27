@@ -405,7 +405,7 @@ describe('IfElse', function(done) {
 	});
 	it("not throws on empty stage", function(done) {
 		assert.doesNotThrow(function() {
-			var par = sb.If(function(){})
+			var par = sb.If(function() {})
 				.then()
 				.then(function() {})
 				.else(function() {});
@@ -425,14 +425,16 @@ describe('IfElse', function(done) {
 });
 
 describe('MultiWaySwitch', function(done) {
-	it('intis', function(done){
+	it('intis', function(done) {
 		var sw = sb.MWS()
 			.name('MWS')
-			.combine(function(){})
-			.split(function(){})
+			.combine(function() {})
+			.split(function() {})
 			.case(sb.MWCase())
-			.case({stage:new Stage})
-			.case(function(){})
+			.case({
+				stage: new Stage
+			})
+			.case(function() {})
 			.case();
 		assert(sw.cfg.name);
 		assert(sw.cfg.combine);
@@ -440,18 +442,106 @@ describe('MultiWaySwitch', function(done) {
 		assert(sw.cfg.cases.length === 3);
 		done();
 	});
-	it('Built', function(done){
+
+	it('Built', function(done) {
 		var sw = sb.MWS()
 			.name('MWS')
-			.combine(function(){})
-			.split(function(){})
+			.combine(function() {})
+			.split(function() {})
 			.case(sb.MWCase())
-			.case({stage:new Stage})
-			.case(function(){})
+			.case({
+				stage: new Stage()
+			})
+			.case(function() {})
 			.case();
 		var swb = sw.build();
 		assert(swb instanceof MultiWaySwitch);
 		assert(swb.cases.length === 3);
 		done();
+	});
+});
+
+describe('Promises/A+ extension', function() {
+	it('Can promise value', function(done) {
+		var promised = sb.Stage(function(ctx) {
+			ctx.some += 1;
+		}).build().defer();
+		var promised2 = promised.then(function(ctx) {
+			assert(ctx.some == 2);
+			return ctx;
+		});
+
+		promised2.then(function(ctx) {
+			done();
+		}, function(err) {
+			assert(!err);
+			done();
+		});
+
+		promised2.fulfill({
+			some: 1
+		});
+	});
+
+	it('Can promise value as promise', function(done) {
+		debugger;
+		var promised = sb.Stage(function(ctx) {
+			ctx.some += 1;
+		}).build().defer();
+
+		promised.then(function(ctx) {
+			assert(ctx.some == 2);
+			done();
+		});
+		promised.fulfill({some:1});
+	});
+
+	it('Can promise value as promise', function(done) {
+		var promised = sb.Stage(function(ctx) {
+			ctx.some += 1;
+		}).build().promise({
+			some: 1
+		}).then(function(ctx) {
+			assert(ctx.some == 2);
+		}).then(function() {
+			done();
+		});
+	});
+
+	it('can be deferred with promise', function(done) {
+		var prom = sb.Stage(function(ctx) {
+			ctx.some += 1;
+		}).build().promise({
+			some: 1
+		});
+
+		var prom2 = sb.Stage(function(ctx, done) {
+			setTimeout(function() {
+				ctx.some += 10;
+				done();
+			});
+		}).build().toCallback();
+
+		prom
+			.then(function(ctx) {
+				assert(ctx.some == 2);
+				return ctx;
+			});
+
+		var prom3 = prom.then(function(ctx1) {
+				assert(ctx1.some == 2);
+				return ctx1;
+			})
+			.then(function(ctx) {
+				ctx.some += 10;
+				return ctx;
+			})
+			.then(function(ctx1) {
+				assert(ctx1.some = 12);
+				return ctx1;
+			})
+			.then(function(ctx) {
+				done();
+			});
 	});
 });
