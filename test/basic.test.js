@@ -465,35 +465,66 @@ describe('Promises/A+ extension', function() {
 	it('Can promise value', function(done) {
 		var promised = sb.Stage(function(ctx) {
 			ctx.some += 1;
-		}).build().defer();
-		var promised2 = promised.then(function(ctx) {
-			assert(ctx.some == 2);
-			return ctx;
+		}).build().promise({
+			some: 1
 		});
 
-		promised2.then(function(ctx) {
+		promised.then(function(ctx) {
+			assert(ctx.some == 2);
+			return ctx;
+		}).then(function(ctx) {
+			debugger;
 			done();
 		}, function(err) {
 			assert(!err);
 			done();
 		});
 
-		promised2.fulfill({
-			some: 1
-		});
 	});
 
-	it('Can promise value as promise', function(done) {
-		debugger;
+	it('Can promise value', function(done) {
 		var promised = sb.Stage(function(ctx) {
 			ctx.some += 1;
-		}).build().defer();
+		}).build().promise();
+		debugger;
 
 		promised.then(function(ctx) {
 			assert(ctx.some == 2);
+			return ctx;
+		}).then(function(ctx) {
+			assert(false);
+		}).then(null, function(err) {
+			assert(err);
 			done();
 		});
-		promised.fulfill({some:1});
+
+	});
+
+	it('Can promises can be chained together', function(done) {
+		debugger;
+		var promised1 = sb.Stage(function(ctx) {
+				ctx.some += 1;
+			})
+			.build()
+			.promise({
+				some: 1
+			});
+
+		var promised2 = sb.Stage(function(ctx) {
+				ctx.some += 1;
+			})
+			.build();
+
+		promised1
+			.then(function(ctx){
+				return promised2.promise(ctx);
+			})
+			.then(function(ctx) {
+				assert(ctx.some == 3);
+				done();
+			});
+
+
 	});
 
 	it('Can promise value as promise', function(done) {
