@@ -432,7 +432,7 @@ describe('MultiWaySwitch', function(done) {
 			.split(function() {})
 			.case(sb.MWCase())
 			.case({
-				stage: new Stage
+				stage: new Stage()
 			})
 			.case(function() {})
 			.case();
@@ -444,6 +444,7 @@ describe('MultiWaySwitch', function(done) {
 	});
 
 	it('Built', function(done) {
+		debugger;
 		var sw = sb.MWS()
 			.name('MWS')
 			.combine(function() {})
@@ -455,6 +456,8 @@ describe('MultiWaySwitch', function(done) {
 			.case(function() {})
 			.case();
 		var swb = sw.build();
+		assert(!swb.cases[0].stage);
+		assert(swb.cases[1].stage instanceof Stage);
 		assert(swb instanceof MultiWaySwitch);
 		assert(swb.cases.length === 3);
 		done();
