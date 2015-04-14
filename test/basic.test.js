@@ -227,16 +227,26 @@ describe('Sequential', function(done) {
 describe('RetryOnError', function(done) {
 	it("inits", function(done) {
 		var par = sb.RetryOnError(function() {})
-			.retry(function() {});
+			.retry(function() {})
+			.backup(function(){})
+			.restore(function(){})
+			;
 		assert(par.cfg.stage);
 		assert(par.cfg.retry);
 		done();
 	});
 	it("Built", function(done) {
+		debugger;
+		var empty = function(){};
 		var par = sb.RetryOnError(function() {})
-			.retry(function() {});
+			.retry(function() {})
+			.backup(empty)
+			.restore(empty)
 		var p = par.build();
+
 		assert(p instanceof RetryOnError);
+		assert(p.restoreContext == empty);
+		assert(p.backupContext == empty);
 		done();
 	});
 	it("not throws on empty stage", function(done) {
