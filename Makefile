@@ -8,7 +8,7 @@ test:
 	@time ./node_modules/.bin/mocha $(T) $(TESTS)
 
 test-dbg:
-	@time ./node_modules/.bin/mocha $(T) -t 1000000 --debug-brk --async-only $(TESTS) --grep "RetryOnError Built"
+	@time ./node_modules/.bin/mocha $(T) -t 1000000 --debug-brk --async-only $(TESTS) --grep "stage is reusable with build"
 
 bench:
 	@time node ./benchmark/run.js

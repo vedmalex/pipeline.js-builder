@@ -105,6 +105,7 @@ describe('Pipeline', function() {
 			.then(new Stage(function() {}));
 
 		assert(pipe.cfg.stages.length === 5);
+		debugger;
 		var p = pipe.build();
 		assert(p instanceof Pipeline);
 		assert(p.stages.every(function(st) {
@@ -228,16 +229,15 @@ describe('RetryOnError', function(done) {
 	it("inits", function(done) {
 		var par = sb.RetryOnError(function() {})
 			.retry(function() {})
-			.backup(function(){})
-			.restore(function(){})
-			;
+			.backup(function() {})
+			.restore(function() {});
 		assert(par.cfg.stage);
 		assert(par.cfg.retry);
 		done();
 	});
 	it("Built", function(done) {
 		debugger;
-		var empty = function(){};
+		var empty = function() {};
 		var par = sb.RetryOnError(function() {})
 			.retry(function() {})
 			.backup(empty)
@@ -529,7 +529,7 @@ describe('Promises/A+ extension', function() {
 			.build();
 
 		promised1
-			.then(function(ctx){
+			.then(function(ctx) {
 				return promised2.promise(ctx);
 			})
 			.then(function(ctx) {
@@ -590,114 +590,148 @@ describe('Promises/A+ extension', function() {
 	});
 });
 
-describe('strange Errors', function(){
-	it('must compile',function(done){
-		  sb.Pipeline()
-    .then(function(ctx) {
-      ctx.item = {};
-    })
-    .then(
-      sb.If(function(ctx) {
-        return ctx.$options.req.session && ctx.$options.req.session.authInfo && ctx.$options.req.session.authInfo.uiProfile.tenantDbUrl;
-      })
-      .then(
-        sb.Pipeline()
-        .stage(
-          sb.MWS()
-          .name('getConnection')
-          .case(
-            sb.MWCase()
-            .stage(function(ctx, done) {
-              ctx.getDb('tenant', function(err, db) {
-                if (!err) {
-                  ctx.sellerdb = db;
-                }
-                done(err);
-              });
-            })
-          )
-          .case(
-            sb.MWCase()
-            .stage(function(ctx, done) {
-              ctx.getDb('system', function(err, db) {
-                if (!err) {
-                  ctx.sellerdb = db;
-                }
-                done(err);
-              });
-            })
-          )
-        )
-        .then(
+describe('strange Errors', function() {
+	it('must compile', function(done) {
+		sb.Pipeline()
+			.then(function(ctx) {
+				ctx.item = {};
+			})
+			.then(
+				sb.If(function(ctx) {
+					return ctx.$options.req.session && ctx.$options.req.session.authInfo && ctx.$options.req.session.authInfo.uiProfile.tenantDbUrl;
+				})
+				.then(
+					sb.Pipeline()
+					.stage(
+						sb.MWS()
+						.name('getConnection')
+						.case(
+							sb.MWCase()
+							.stage(function(ctx, done) {
+								ctx.getDb('tenant', function(err, db) {
+									if (!err) {
+										ctx.sellerdb = db;
+									}
+									done(err);
+								});
+							})
+						)
+						.case(
+							sb.MWCase()
+							.stage(function(ctx, done) {
+								ctx.getDb('system', function(err, db) {
+									if (!err) {
+										ctx.sellerdb = db;
+									}
+									done(err);
+								});
+							})
+						)
+					)
+					.then(
 
-        )
+					)
 
-      )
-      .else(
-        sb.Pipeline(function(ctx, done) {
-          ctx.getDb('system', SERVERCONFIG.db.url, function(err, systemdb) {
-            if (!err) {
-              ctx.systemdb = systemdb;
-            }
-            done(err);
-          });
-        })
-        .then(function(ctx, done) {
-          CustomQuery.getTenantsConnectionStrings(ctx.systemdb, {}, function(err, connectionStignArray) {
-            if (!err && connectionStignArray) {
-              ctx.connectionStignArray = connectionStignArray;
-            }
-            done(err);
-          });
-        })
-        .then(sb.Parallel()
-          .split(function(ctx) {
-            return ctx.connectionStignArray.map(function(cs) {
-              return {
-                connection: cs
-              };
-            });
-          })
-          .stage(sb.Pipeline()
-            .stage(function(ctx, done) {
-              ctx.getDb(ctx.connection, ctx.connection, function(err, db) {
-                if (!err) {
-                  ctx.tenantDb = db;
-                }
-                done(err);
-              });
-            })
-            .then(function(ctx, done) {
-              var query = Object.getOwnPropertyNames(ctx.$options.req.query).length > 0 ? ctx.$options.req.query : ctx.$options.req.body;
-              var catalogLink = query.link_catalog ? query.link_catalog : '';
-              CustomQuery.FindLink(ctx.tenantDb, {
-                catalogLink: catalogLink
-              }, function(err, isTenant) {
-                if (!err && isTenant) {
-                  ctx.sellerdb = ctx.tenantDb;
-                  ctx.isTenant = true;
-                } else {
-                  ctx.remove(ctx.connection);
-                }
-                done(err);
-              });
-            })
-          )
-          .combine(function(ctx, children) {
-            var child;
-            for (var i = 0, len = children.length; i < len; i++) {
-              child = children[i];
-              if (ctx.isTenant) {
-                ctx.sellerdb = ctx.tenantDb;
-              }
-            }
-          })
-        )
-      )
-    )
-    .then(function(ctx, done) {
-      pipeFunction();
-    }).build();
-    done();
+				)
+				.else(
+					sb.Pipeline(function(ctx, done) {
+						ctx.getDb('system', SERVERCONFIG.db.url, function(err, systemdb) {
+							if (!err) {
+								ctx.systemdb = systemdb;
+							}
+							done(err);
+						});
+					})
+					.then(function(ctx, done) {
+						CustomQuery.getTenantsConnectionStrings(ctx.systemdb, {}, function(err, connectionStignArray) {
+							if (!err && connectionStignArray) {
+								ctx.connectionStignArray = connectionStignArray;
+							}
+							done(err);
+						});
+					})
+					.then(sb.Parallel()
+						.split(function(ctx) {
+							return ctx.connectionStignArray.map(function(cs) {
+								return {
+									connection: cs
+								};
+							});
+						})
+						.stage(sb.Pipeline()
+							.stage(function(ctx, done) {
+								ctx.getDb(ctx.connection, ctx.connection, function(err, db) {
+									if (!err) {
+										ctx.tenantDb = db;
+									}
+									done(err);
+								});
+							})
+							.then(function(ctx, done) {
+								var query = Object.getOwnPropertyNames(ctx.$options.req.query).length > 0 ? ctx.$options.req.query : ctx.$options.req.body;
+								var catalogLink = query.link_catalog ? query.link_catalog : '';
+								CustomQuery.FindLink(ctx.tenantDb, {
+									catalogLink: catalogLink
+								}, function(err, isTenant) {
+									if (!err && isTenant) {
+										ctx.sellerdb = ctx.tenantDb;
+										ctx.isTenant = true;
+									} else {
+										ctx.remove(ctx.connection);
+									}
+									done(err);
+								});
+							})
+						)
+						.combine(function(ctx, children) {
+							var child;
+							for (var i = 0, len = children.length; i < len; i++) {
+								child = children[i];
+								if (ctx.isTenant) {
+									ctx.sellerdb = ctx.tenantDb;
+								}
+							}
+						})
+					)
+				)
+			)
+			.then(function(ctx, done) {
+				pipeFunction();
+			}).build();
+		done();
 	});
-})
+
+	it('stage is reusable with build', function(done) {
+		var stage = sb.Pipeline()
+			.then(function(ctx) {
+				if (ctx.done)
+					ctx.done++;
+				else
+					ctx.done = 1;
+			})
+			.then(function(ctx, done) {
+				setTimeout(function() {
+					if (ctx.async)
+						ctx.async += 10;
+					else
+						ctx.async = 10;
+					done();
+				}, 10);
+			});
+
+		var s = sb.Pipeline(stage)
+			.then(stage)
+			.then(stage)
+		;
+		debugger;
+		s = s.build();
+		// s = s.toCallback();
+		s.execute({}, function(err, ctx) {
+			console.log(ctx.done);
+			console.log(ctx.async);
+			assert(ctx.done === 3);
+			assert(ctx.async === 30);
+			done();
+		});
+	});
+});
